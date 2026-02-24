@@ -13,7 +13,7 @@ const Settings = ({ theme, setTheme }) => {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.put('http://localhost:5001/api/user/preferences',
+            const res = await axios.put('https://mailoo-5yjf.onrender.com/api/user/preferences',
                 { theme: newTheme },
                 { headers: { 'x-auth-token': token } }
             );

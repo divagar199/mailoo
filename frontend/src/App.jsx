@@ -58,7 +58,7 @@ const App = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get('http://localhost:5001/api/user/preferences', {
+          const res = await axios.get('https://mailoo-5yjf.onrender.com/api/user/preferences', {
             headers: { 'x-auth-token': token }
           });
           if (res.data?.theme) {

@@ -23,7 +23,7 @@ const Login = () => {
         const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
 
         try {
-            const res = await axios.post(`http://localhost:5001${endpoint}`, formData);
+            const res = await axios.post(`https://mailoo-5yjf.onrender.com${endpoint}`, formData);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             navigate('/');

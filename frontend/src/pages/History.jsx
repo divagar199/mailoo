@@ -11,7 +11,7 @@ const History = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await axios.get('http://localhost:5001/api/mail/history');
+                const res = await axios.get('https://mailoo-5yjf.onrender.com/api/mail/history');
                 setLogs(res.data);
             } catch (err) {
                 setError('Failed to fetch history data.');

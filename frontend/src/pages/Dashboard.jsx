@@ -90,7 +90,7 @@ const Dashboard = () => {
                 data.append('attachments', file);
             });
 
-            const res = await axios.post('http://localhost:5001/api/mail/send', data, {
+            const res = await axios.post('https://mailoo-5yjf.onrender.com/api/mail/send', data, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
