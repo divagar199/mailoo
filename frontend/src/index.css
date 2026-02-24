@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --md-primary: #1a73e8;
+  --md-primary-hover: #1557b0;
+  --md-primary-light: #e8f0fe;
+  --md-surface: #ffffff;
+  --md-background: #f6f8fc;
+  --md-on-surface: #202124;
+  --md-on-surface-variant: #5f6368;
+  --md-outline: #dadce0;
+  --md-outline-hover: #bdc1c6;
+  --md-success: #34a853;
+  --md-success-bg: #e6f4ea;
+  --md-error: #ea4335;
+  --md-error-bg: #fce8e6;
+  --md-warning: #fbbc04;
+  --md-warning-bg: #fef7e0;
+  --sidebar-width: 256px;
+  --sidebar-collapsed: 72px;
+  --topbar-height: 64px;
+  --bottomnav-height: 64px;
+  --transition-fast: 150ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-std: 250ms cubic-bezier(0.2, 0, 0, 1);
+  --shadow-1: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  --shadow-2: 0 1px 3px 0 rgba(60, 64, 67, .3), 0 4px 8px 3px rgba(60, 64, 67, .15);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'Roboto', 'Google Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--md-background);
+  color: var(--md-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#root {
+  height: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--md-outline);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-outline-hover);
+}
+
+.md-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--md-primary-light);
+  color: var(--md-primary);
+  border-radius: 16px;
+  padding: 2px 10px 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: default;
+  transition: background var(--transition-fast);
+}
+
+.md-chip button {
+  border: none;
+  background: none;
+  color: var(--md-primary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.md-chip button:hover {
+  background: rgba(26, 115, 232, 0.15);
+}
+
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  pointer-events: none;
+}
+
+.ripple:hover::after {
+  opacity: 0.08;
+}
+
+.ripple:active::after {
+  opacity: 0.16;
+}
