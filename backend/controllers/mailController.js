@@ -1,20 +1,8 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const XLSX = require('xlsx');
 const EmailHistory = require('../models/EmailHistory');
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.sendMail = async (req, res) => {
     const { subject, body } = req.body;
@@ -39,18 +27,14 @@ exports.sendMail = async (req, res) => {
             const workbook = XLSX.read(excelFile.buffer, { type: 'buffer' });
             const sheetName = workbook.SheetNames[0];
             const sheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            jsonData.forEach(row => {
-                if (Array.isArray(row)) {
-                    row.forEach(cell => {
-                        const val = String(cell || '').trim();
-                        if (emailRegex.test(val)) {
-                            recipients.push(val);
-                        }
-                    });
-                }
+            rows.forEach(row => {
+                if (!Array.isArray(row)) return;
+                row.forEach(cell => {
+                    const val = String(cell || '').trim();
+                    if (emailRegex.test(val)) recipients.push(val);
+                });
             });
             recipients = [...new Set(recipients)];
         } catch (err) {
@@ -59,7 +43,7 @@ exports.sendMail = async (req, res) => {
     }
 
     if (!recipients || recipients.length === 0) {
-        return res.status(400).json({ error: 'No valid recipients found. Provide emails or upload a valid Excel file.' });
+        return res.status(400).json({ error: 'No valid recipients found.' });
     }
 
     if (!subject || !body) {
@@ -68,24 +52,20 @@ exports.sendMail = async (req, res) => {
 
     const attachmentsMeta = attachmentFiles.map(f => ({ filename: f.originalname, size: f.size }));
 
-    const nodemailerAttachments = attachmentFiles.map(f => ({
+    const resendAttachments = attachmentFiles.map(f => ({
         filename: f.originalname,
         content: f.buffer,
-        contentType: f.mimetype,
     }));
 
     try {
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_USER,
-            bcc: recipients.join(','),
+        const data = await resend.emails.send({
+            from: process.env.FROM_EMAIL || 'Mailoo <onboarding@resend.dev>',
+            to: recipients,
             subject: subject,
             text: body,
             html: `<div style="font-family: Roboto, Arial, sans-serif; line-height: 1.6; color: #202124;">${body.replace(/\n/g, '<br>')}</div>`,
-            attachments: nodemailerAttachments,
-        };
-
-        const info = await transporter.sendMail(mailOptions);
+            attachments: resendAttachments,
+        });
 
         const historyRecord = new EmailHistory({
             subject,
@@ -100,8 +80,7 @@ exports.sendMail = async (req, res) => {
             success: true,
             message: 'Emails sent successfully',
             recipientCount: recipients.length,
-            accepted: info.accepted,
-            rejected: info.rejected
+            id: data.id,
         });
     } catch (error) {
         console.error('Error sending email:', error);
@@ -116,7 +95,7 @@ exports.sendMail = async (req, res) => {
             });
             await historyRecord.save();
         } catch (dbError) {
-            console.error('Also failed to save email history:', dbError);
+            console.error('Failed to save history:', dbError);
         }
 
         res.status(500).json({
