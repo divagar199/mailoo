@@ -1,8 +1,14 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const XLSX = require('xlsx');
 const EmailHistory = require('../models/EmailHistory');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 exports.sendMail = async (req, res) => {
     const { subject, body } = req.body;
@@ -52,20 +58,24 @@ exports.sendMail = async (req, res) => {
 
     const attachmentsMeta = attachmentFiles.map(f => ({ filename: f.originalname, size: f.size }));
 
-    const resendAttachments = attachmentFiles.map(f => ({
+    const nodemailerAttachments = attachmentFiles.map(f => ({
         filename: f.originalname,
         content: f.buffer,
+        contentType: f.mimetype,
     }));
 
     try {
-        const data = await resend.emails.send({
-            from: process.env.FROM_EMAIL || 'Mailoo <onboarding@resend.dev>',
-            to: recipients,
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER,
+            bcc: recipients.join(','),
             subject: subject,
             text: body,
             html: `<div style="font-family: Roboto, Arial, sans-serif; line-height: 1.6; color: #202124;">${body.replace(/\n/g, '<br>')}</div>`,
-            attachments: resendAttachments,
-        });
+            attachments: nodemailerAttachments,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
 
         const historyRecord = new EmailHistory({
             subject,
@@ -80,7 +90,8 @@ exports.sendMail = async (req, res) => {
             success: true,
             message: 'Emails sent successfully',
             recipientCount: recipients.length,
-            id: data.id,
+            accepted: info.accepted,
+            rejected: info.rejected
         });
     } catch (error) {
         console.error('Error sending email:', error);
