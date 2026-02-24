@@ -2,21 +2,27 @@ const express = require("express");
 const router = express.Router();
 const nodemailer = require("nodemailer");
 const multer = require("multer");
+const dns = require("dns");
+const util = require("util");
+const resolve4 = util.promisify(dns.resolve4);
 const EmailLog = require("../models/EmailLog");
 const Settings = require("../models/Settings");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const createTransporter = (emailUser, emailPass) => {
+const createTransporter = (emailUser, emailPass, ipAddress) => {
     return nodemailer.createTransport({
-        host: "smtp.gmail.com",
+        host: ipAddress,
         port: 465,
         secure: true,
         auth: {
             user: emailUser,
             pass: emailPass,
         },
+        tls: {
+            servername: "smtp.gmail.com"
+        }
     });
 };
 
@@ -40,7 +46,11 @@ router.post("/send", upload.array('attachments'), async (req, res) => {
             return res.status(400).json({ msg: "SMTP Credentials not configured. Please add them in Settings." });
         }
 
-        const transporter = createTransporter(settings.emailUser, settings.emailPass);
+        // Force IPv4 lookup for Render compatibility
+        const addresses = await resolve4("smtp.gmail.com");
+        const ipv4 = addresses[0];
+
+        const transporter = createTransporter(settings.emailUser, settings.emailPass, ipv4);
 
         const mailAttachments = req.files ? req.files.map(file => ({
             filename: file.originalname,
