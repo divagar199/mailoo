@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Send, AlertCircle, CheckCircle2, Upload, X, Paperclip, FileText, Image } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { Send, AlertCircle, CheckCircle2, X, Paperclip, FileText, Image } from 'lucide-react';
 import { sendMail } from '../api';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -10,6 +11,7 @@ const MailComposer = () => {
     const [recipientInput, setRecipientInput] = useState('');
     const [recipientChips, setRecipientChips] = useState([]);
     const [excelFile, setExcelFile] = useState(null);
+    const [excelSummary, setExcelSummary] = useState(null);
     const [attachments, setAttachments] = useState([]);
     const [status, setStatus] = useState({ type: '', message: '' });
     const [loading, setLoading] = useState(false);
@@ -48,6 +50,42 @@ const MailComposer = () => {
             return;
         }
         setExcelFile(file);
+        setExcelSummary(null);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const found = [];
+                rows.forEach(row => {
+                    if (!Array.isArray(row)) return;
+                    row.forEach(cell => {
+                        const val = String(cell || '').trim();
+                        if (EMAIL_RE.test(val)) found.push(val);
+                    });
+                });
+
+                const unique = [...new Set(found)];
+                if (unique.length === 0) {
+                    setStatus({ type: 'error', message: `No valid email addresses found in "${file.name}".` });
+                    setExcelFile(null);
+                    return;
+                }
+
+                setRecipientChips(prev => [...new Set([...prev, ...unique])]);
+                setExcelSummary({ filename: file.name, count: unique.length });
+            } catch (err) {
+                setStatus({ type: 'error', message: 'Failed to parse Excel file: ' + err.message });
+                setExcelFile(null);
+            }
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     const handleAttachmentUpload = (files) => {
@@ -107,6 +145,7 @@ const MailComposer = () => {
             setRecipientInput('');
             setRecipientChips([]);
             setExcelFile(null);
+            setExcelSummary(null);
             setAttachments([]);
         } catch (error) {
             setStatus({
@@ -187,10 +226,16 @@ const MailComposer = () => {
                             >
                                 <FileText className="w-4 h-4 text-[#1a73e8] flex-shrink-0" />
                                 {excelFile ? (
-                                    <div className="flex items-center gap-2 flex-1">
-                                        <span className="text-sm text-[#202124] font-medium truncate">{excelFile.name}</span>
+                                    <div className="flex items-center gap-2 flex-1 flex-wrap">
+                                        <span className="text-sm text-[#202124] font-medium truncate max-w-[160px]">{excelFile.name}</span>
                                         <span className="text-xs text-[#5f6368]">{formatSize(excelFile.size)}</span>
-                                        <button type="button" onClick={e => { e.stopPropagation(); setExcelFile(null); }}
+                                        {excelSummary && (
+                                            <span className="inline-flex items-center gap-1 text-xs font-medium bg-[#e6f4ea] text-[#137333] px-2 py-0.5 rounded-full border border-[#ceead6]">
+                                                ✓ {excelSummary.count} email{excelSummary.count !== 1 ? 's' : ''} imported
+                                            </span>
+                                        )}
+                                        <button type="button"
+                                            onClick={e => { e.stopPropagation(); setExcelFile(null); setExcelSummary(null); }}
                                             className="ml-auto text-[#5f6368] hover:text-[#ea4335] rounded-full p-0.5 transition-colors">
                                             <X className="w-3.5 h-3.5" />
                                         </button>

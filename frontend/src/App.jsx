@@ -37,7 +37,7 @@ function Sidebar({ mobileOpen, setMobileOpen }) {
               <Mail className="w-4 h-4 text-white" />
             </div>
             <span className="text-lg font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Roboto, sans-serif" }}>
-              Mailoo Bulk
+              Mailoo
             </span>
           </div>
           <button
@@ -90,7 +90,7 @@ function TopBar({ setMobileOpen }) {
           <Mail className="w-3.5 h-3.5 text-white" />
         </div>
         <span className="text-base font-medium text-[#202124]" style={{ fontFamily: "'Google Sans', Roboto, sans-serif" }}>
-          Mailoo Bulk
+          Mailoo
         </span>
       </div>
     </header>
